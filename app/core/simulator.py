@@ -24,18 +24,16 @@ def run_monte_carlo(config: SimulationConfig, seed: int | None = None) -> Simula
     mu_monthly, sigma_monthly = _monthly_distribution_parameters(config)
     log_returns = rng.normal(mu_monthly, sigma_monthly, size=(simulation_count, months))
     monthly_growth = np.exp(log_returns)
-
-    crash_happens = rng.random(simulation_count) < config.crash_probability_horizon
-    crash_months = np.full(simulation_count, -1, dtype=np.int32)
-    if months > 0:
-        crash_months[crash_happens] = rng.integers(0, months, size=int(crash_happens.sum()))
+    monthly_crash_probability = 1.0 - math.exp(-1.0 / (12.0 * config.crash_interval_years))
+    crash_events = rng.random((simulation_count, months)) < monthly_crash_probability
+    crash_counts = crash_events.sum(axis=1, dtype=np.int32)
 
     values = np.empty((simulation_count, months + 1), dtype=np.float64)
     values[:, 0] = config.current_holding
 
     for month_index in range(months):
         next_values = values[:, month_index] * monthly_growth[:, month_index]
-        crash_mask = crash_months == month_index
+        crash_mask = crash_events[:, month_index]
         if np.any(crash_mask):
             next_values[crash_mask] *= 1.0 - config.crash_drawdown
         next_values += config.monthly_investment
@@ -57,7 +55,12 @@ def run_monte_carlo(config: SimulationConfig, seed: int | None = None) -> Simula
         worst_final_value=float(np.min(terminal_values)),
         best_final_value=float(np.max(terminal_values)),
         loss_probability=float(np.mean(terminal_values < config.total_principal)),
-        crash_occurrence_rate=float(np.mean(crash_happens)),
+        crash_occurrence_rate=float(np.mean(crash_counts > 0)),
+        average_crash_count=float(np.mean(crash_counts)),
+        zero_crash_rate=float(np.mean(crash_counts == 0)),
+        one_crash_rate=float(np.mean(crash_counts == 1)),
+        two_crash_rate=float(np.mean(crash_counts == 2)),
+        three_plus_crash_rate=float(np.mean(crash_counts >= 3)),
     )
 
     return SimulationResult(
@@ -71,6 +74,7 @@ def run_monte_carlo(config: SimulationConfig, seed: int | None = None) -> Simula
         percentile_75=p75,
         percentile_90=p90,
         sampled_paths=sampled_paths,
-        crash_months=crash_months,
+        crash_events=crash_events,
+        crash_counts=crash_counts,
         summary=summary,
     )

@@ -12,7 +12,7 @@ class SimulationConfig:
     expected_annual_return: float
     investment_years: int
     crash_drawdown: float
-    crash_probability_horizon: float
+    crash_interval_years: float = 70.0
     annual_volatility: float = 0.18
     simulation_count: int = 5000
 
@@ -35,8 +35,8 @@ class SimulationConfig:
             raise ValueError("投资期限必须在 1 到 50 年之间。")
         if not 0 <= self.crash_drawdown < 1:
             raise ValueError("极端回撤幅度必须在 0% 到 100% 之间。")
-        if not 0 <= self.crash_probability_horizon <= 1:
-            raise ValueError("极端回撤发生概率必须在 0% 到 100% 之间。")
+        if not 0.5 <= self.crash_interval_years <= 200:
+            raise ValueError("极端情况平均发生间隔必须在 0.5 年到 200 年之间。")
         if not 0 <= self.annual_volatility <= 1:
             raise ValueError("年化波动率必须在 0% 到 100% 之间。")
         if self.simulation_count < 1000 or self.simulation_count > 10000 or self.simulation_count % 1000 != 0:
@@ -54,6 +54,11 @@ class SimulationSummary:
     best_final_value: float
     loss_probability: float
     crash_occurrence_rate: float
+    average_crash_count: float
+    zero_crash_rate: float
+    one_crash_rate: float
+    two_crash_rate: float
+    three_plus_crash_rate: float
 
 
 @dataclass(slots=True)
@@ -68,5 +73,6 @@ class SimulationResult:
     percentile_75: np.ndarray
     percentile_90: np.ndarray
     sampled_paths: np.ndarray
-    crash_months: np.ndarray
+    crash_events: np.ndarray
+    crash_counts: np.ndarray
     summary: SimulationSummary

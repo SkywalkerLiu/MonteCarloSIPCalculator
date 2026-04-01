@@ -37,6 +37,10 @@ def format_percent(value: float) -> str:
     return f"{value * 100:.1f}%"
 
 
+def format_event_count(value: float) -> str:
+    return f"{value:.2f} 次"
+
+
 class WorkerSignals(QObject):
     finished = Signal(object)
     failed = Signal(str)
@@ -260,14 +264,14 @@ class MainWindow(FramelessMainWindow):
         self.investment_years_input.setRange(1, 50)
         self.investment_years_input.setValue(20)
         self.crash_drawdown_input = self._percent_input(35.0, minimum=0.0, maximum=95.0)
-        self.crash_probability_input = self._percent_input(25.0, minimum=0.0, maximum=100.0)
+        self.crash_interval_input = self._interval_input(70.0)
 
         form.addRow("当前持仓市值", self.current_holding_input)
         form.addRow("每月定投额", self.monthly_investment_input)
         form.addRow("预期年化收益率", self.expected_return_input)
         form.addRow("投资期限（年）", self.investment_years_input)
         form.addRow("极端回撤幅度", self.crash_drawdown_input)
-        form.addRow("极端回撤发生概率", self.crash_probability_input)
+        form.addRow("极端情况平均每多少年发生 1 次", self.crash_interval_input)
 
         advanced = CollapsibleSection("高级设置")
         advanced_form = QFormLayout(advanced.content)
@@ -338,11 +342,19 @@ class MainWindow(FramelessMainWindow):
         metric_grid.addWidget(self.metric_principal, 1, 0)
         metric_grid.addWidget(self.metric_loss, 1, 1)
 
+        event_heading = QLabel("极端事件覆盖摘要")
+        event_heading.setObjectName("SectionHint")
+        self.event_summary_label = QLabel("等待模拟结果。")
+        self.event_summary_label.setObjectName("ResultSummary")
+        self.event_summary_label.setWordWrap(True)
+
         chart_switcher = self._build_chart_switcher()
         chart_stack = self._build_chart_stack()
 
         layout.addLayout(heading_row)
         layout.addLayout(metric_grid)
+        layout.addWidget(event_heading)
+        layout.addWidget(self.event_summary_label)
         layout.addLayout(chart_switcher)
         layout.addWidget(chart_stack, 1)
         return container
@@ -381,7 +393,7 @@ class MainWindow(FramelessMainWindow):
 
         self.fan_chart = FanChartCard("路径扇形图", "展示 P10 / P25 / P50 / P75 / P90 的资产区间")
         self.hist_chart = HistogramChartCard("终值直方图", "用终值分布观察结果偏态与上下沿")
-        self.paths_chart = SamplePathsChartCard("样本路径图", "抽取少量路径展示真实波动和一次性回撤的影响")
+        self.paths_chart = SamplePathsChartCard("样本路径图", "抽取少量路径展示真实波动和重复极端事件的影响")
 
         self.chart_cards = {
             "paths": self.paths_chart,
@@ -421,6 +433,15 @@ class MainWindow(FramelessMainWindow):
         spinbox.setValue(value)
         return spinbox
 
+    def _interval_input(self, value: float) -> QDoubleSpinBox:
+        spinbox = QDoubleSpinBox()
+        spinbox.setRange(0.5, 200.0)
+        spinbox.setDecimals(1)
+        spinbox.setSingleStep(0.5)
+        spinbox.setSuffix(" 年 / 次")
+        spinbox.setValue(value)
+        return spinbox
+
     def build_config(self) -> SimulationConfig:
         config = SimulationConfig(
             current_holding=self.current_holding_input.value(),
@@ -428,7 +449,7 @@ class MainWindow(FramelessMainWindow):
             expected_annual_return=self.expected_return_input.value() / 100.0,
             investment_years=self.investment_years_input.value(),
             crash_drawdown=self.crash_drawdown_input.value() / 100.0,
-            crash_probability_horizon=self.crash_probability_input.value() / 100.0,
+            crash_interval_years=self.crash_interval_input.value(),
             annual_volatility=self.annual_volatility_input.value() / 100.0,
             simulation_count=self.simulation_count_input.value(),
         )
@@ -463,7 +484,8 @@ class MainWindow(FramelessMainWindow):
         self.result = result
         self.simulate_button.setDisabled(False)
         self.status_label.setText(
-            f"已完成 {result.config.simulation_count:,} 次模拟，投资期内黑天鹅实际触发率约为 {format_percent(result.summary.crash_occurrence_rate)}。"
+            f"已完成 {result.config.simulation_count:,} 次模拟，投资期内至少 1 次极端事件的实际触发率约为 "
+            f"{format_percent(result.summary.crash_occurrence_rate)}，平均触发 {format_event_count(result.summary.average_crash_count)}。"
         )
 
         summary = result.summary
@@ -474,6 +496,12 @@ class MainWindow(FramelessMainWindow):
         )
         self.metric_principal.update_text(format_currency(summary.total_principal), "当前持仓加上未来全部定投金额")
         self.metric_loss.update_text(format_percent(summary.loss_probability), "终值低于总投入本金的概率")
+        self.event_summary_label.setText(
+            "平均触发次数 "
+            f"{format_event_count(summary.average_crash_count)}；至少 1 次 {format_percent(summary.crash_occurrence_rate)}；"
+            f"0 次 {format_percent(summary.zero_crash_rate)}，1 次 {format_percent(summary.one_crash_rate)}，"
+            f"2 次 {format_percent(summary.two_crash_rate)}，3 次及以上 {format_percent(summary.three_plus_crash_rate)}。"
+        )
 
         self.fan_chart.update_result(result)
         self.hist_chart.update_result(result)
