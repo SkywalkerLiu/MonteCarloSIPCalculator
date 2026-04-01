@@ -26,6 +26,7 @@ class AppSmokeTests(unittest.TestCase):
             self.assertTrue(bool(window.windowFlags() & Qt.WindowType.FramelessWindowHint))
             self.assertIsNotNone(window.title_bar)
             self.assertEqual(window.title_bar.title_label.text(), "蒙特卡洛定投计算器")
+            self.assertEqual(window.still_life.minimumHeight(), window.still_life.maximumHeight())
         finally:
             window.close()
             app.processEvents()

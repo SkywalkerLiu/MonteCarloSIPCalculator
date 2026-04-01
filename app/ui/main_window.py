@@ -114,8 +114,8 @@ class CollapsibleSection(QWidget):
 class VintagePanelStillLife(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.setMinimumHeight(180)
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setFixedHeight(210)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
     def paintEvent(self, event) -> None:  # pragma: no cover - visual rendering
         painter = QPainter(self)
@@ -126,6 +126,8 @@ class VintagePanelStillLife(QWidget):
         painter.fillRect(rect, Qt.GlobalColor.transparent)
 
         painter.save()
+        # Lift the whole still-life slightly so it stays visually anchored but not too low.
+        painter.translate(0.0, -14.0)
         painter.setOpacity(0.28)
         self._draw_signature(painter, rect)
         painter.setOpacity(0.34)
@@ -304,7 +306,8 @@ class MainWindow(FramelessMainWindow):
         panel_layout.addSpacing(4)
         panel_layout.addLayout(button_row)
         panel_layout.addWidget(self.status_label)
-        panel_layout.addWidget(self.still_life, 1)
+        panel_layout.addStretch(1)
+        panel_layout.addWidget(self.still_life)
 
         wrapper = QVBoxLayout(content)
         wrapper.setContentsMargins(0, 0, 0, 0)

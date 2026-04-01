@@ -134,7 +134,7 @@ dist/
 
 当前正式版资源文件名为：
 
-- `MonteCarloSIPCalculator-v1.1.0-win64.zip`
+- `MonteCarloSIPCalculator-v1.1.1-win64.zip`
 
 下载后解压，直接运行：
 
