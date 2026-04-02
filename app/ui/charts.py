@@ -34,7 +34,7 @@ class ChartCard(QFrame):
         self.figure = Figure(figsize=(6.2, 4.2), dpi=100, facecolor="#fbf0db")
         self.canvas = FigureCanvasQTAgg(self.figure)
         self.canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.canvas.setMinimumHeight(460)
+        self.canvas.setMinimumHeight(390)
         self.canvas.setMouseTracking(True)
 
         self.title_label = QLabel(title)

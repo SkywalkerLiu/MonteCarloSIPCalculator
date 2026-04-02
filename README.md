@@ -132,9 +132,11 @@ dist/
 
 [`https://github.com/SkywalkerLiu/MonteCarloSIPCalculator/releases`](https://github.com/SkywalkerLiu/MonteCarloSIPCalculator/releases)
 
+当前最新版本：`v1.1.2`
+
 当前正式版资源文件名为：
 
-- `MonteCarloSIPCalculator-v1.1.1-win64.zip`
+- `MonteCarloSIPCalculator-v1.1.2-win64.zip`
 
 下载后解压，直接运行：
 

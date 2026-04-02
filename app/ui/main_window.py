@@ -75,8 +75,8 @@ class MetricCard(QFrame):
         self.caption_label.setObjectName("MetricCaption")
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(18, 16, 18, 16)
-        layout.setSpacing(6)
+        layout.setContentsMargins(16, 14, 16, 14)
+        layout.setSpacing(4)
         layout.addWidget(self.title_label)
         layout.addWidget(self.value_label)
         layout.addWidget(self.caption_label)
@@ -114,7 +114,7 @@ class CollapsibleSection(QWidget):
 class VintagePanelStillLife(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.setFixedHeight(210)
+        self.setFixedHeight(180)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
     def paintEvent(self, event) -> None:  # pragma: no cover - visual rendering
@@ -126,8 +126,8 @@ class VintagePanelStillLife(QWidget):
         painter.fillRect(rect, Qt.GlobalColor.transparent)
 
         painter.save()
-        # Lift the whole still-life slightly so it stays visually anchored but not too low.
-        painter.translate(0.0, -14.0)
+        # Keep the motif visible inside the shorter reserved area.
+        painter.translate(0.0, -8.0)
         painter.setOpacity(0.28)
         self._draw_signature(painter, rect)
         painter.setOpacity(0.34)
@@ -215,7 +215,7 @@ class MainWindow(FramelessMainWindow):
 
         self.setWindowTitle("蒙特卡洛定投计算器")
         self.resize(1540, 980)
-        self.setMinimumSize(1280, 860)
+        self.setMinimumSize(1360, 920)
         icon_path = resource_path("assets", "icons", "monte_carlo_reserve.png")
         if icon_path.exists():
             self.setWindowIcon(QIcon(str(icon_path)))
@@ -225,14 +225,15 @@ class MainWindow(FramelessMainWindow):
         self.set_chrome_content(central)
 
         root_layout = QHBoxLayout(central)
-        root_layout.setContentsMargins(20, 14, 20, 20)
-        root_layout.setSpacing(18)
+        root_layout.setContentsMargins(18, 12, 18, 16)
+        root_layout.setSpacing(16)
 
         root_layout.addWidget(self._build_control_panel(), 0)
         root_layout.addWidget(self._build_results_panel(), 1)
 
     def _build_control_panel(self) -> QWidget:
         outer = QScrollArea()
+        self.control_scroll_area = outer
         outer.setWidgetResizable(True)
         outer.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         outer.setMinimumWidth(390)
@@ -246,8 +247,8 @@ class MainWindow(FramelessMainWindow):
         apply_paper_shadow(panel, blur_radius=30.0, y_offset=6.0)
 
         panel_layout = QVBoxLayout(panel)
-        panel_layout.setContentsMargins(22, 14, 22, 22)
-        panel_layout.setSpacing(12)
+        panel_layout.setContentsMargins(22, 14, 22, 18)
+        panel_layout.setSpacing(10)
 
         title = QLabel("蒙特卡洛定投计算器")
         title.setObjectName("SectionTitle")
@@ -255,18 +256,18 @@ class MainWindow(FramelessMainWindow):
         title_note.setObjectName("FlourishLabel")
 
         form = QFormLayout()
-        form.setSpacing(12)
+        form.setSpacing(10)
         form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
         form.setFormAlignment(Qt.AlignmentFlag.AlignTop)
 
-        self.current_holding_input = self._currency_input(100000)
-        self.monthly_investment_input = self._currency_input(3000)
-        self.expected_return_input = self._percent_input(8.0, minimum=-99.0, maximum=80.0)
+        self.current_holding_input = self._currency_input(0)
+        self.monthly_investment_input = self._currency_input(1500)
+        self.expected_return_input = self._percent_input(15.0, minimum=-99.0, maximum=80.0)
         self.investment_years_input = QSpinBox()
         self.investment_years_input.setRange(1, 50)
-        self.investment_years_input.setValue(20)
-        self.crash_drawdown_input = self._percent_input(35.0, minimum=0.0, maximum=95.0)
-        self.crash_interval_input = self._interval_input(70.0)
+        self.investment_years_input.setValue(30)
+        self.crash_drawdown_input = self._percent_input(50.0, minimum=0.0, maximum=95.0)
+        self.crash_interval_input = self._interval_input(15.0)
 
         form.addRow("当前持仓市值", self.current_holding_input)
         form.addRow("每月定投额", self.monthly_investment_input)
@@ -276,10 +277,11 @@ class MainWindow(FramelessMainWindow):
         form.addRow("极端情况平均每多少年发生 1 次", self.crash_interval_input)
 
         advanced = CollapsibleSection("高级设置")
+        self.advanced_section = advanced
         advanced_form = QFormLayout(advanced.content)
-        advanced_form.setSpacing(12)
+        advanced_form.setSpacing(10)
 
-        self.annual_volatility_input = self._percent_input(18.0, minimum=0.0, maximum=100.0)
+        self.annual_volatility_input = self._percent_input(20.0, minimum=0.0, maximum=100.0)
         self.simulation_count_input = QSpinBox()
         self.simulation_count_input.setRange(1000, 10000)
         self.simulation_count_input.setSingleStep(1000)
@@ -303,7 +305,7 @@ class MainWindow(FramelessMainWindow):
         panel_layout.addWidget(title_note)
         panel_layout.addLayout(form)
         panel_layout.addWidget(advanced)
-        panel_layout.addSpacing(4)
+        panel_layout.addSpacing(2)
         panel_layout.addLayout(button_row)
         panel_layout.addWidget(self.status_label)
         panel_layout.addStretch(1)
@@ -317,24 +319,22 @@ class MainWindow(FramelessMainWindow):
     def _build_results_panel(self) -> QWidget:
         container = QWidget()
         layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 10, 0, 0)
-        layout.setSpacing(12)
+        layout.setContentsMargins(0, 6, 0, 0)
+        layout.setSpacing(8)
 
+        heading_row = QHBoxLayout()
+        heading_row.setContentsMargins(0, 4, 0, 0)
         heading = QLabel("结果概览")
         heading.setObjectName("SectionTitle")
         heading_ornament = QLabel("Savings Almanac")
         heading_ornament.setObjectName("FlourishLabel")
-
-        heading_row = QHBoxLayout()
-        heading_row.setContentsMargins(0, 0, 0, 0)
-        heading_row.setSpacing(10)
         heading_row.addWidget(heading)
         heading_row.addStretch(1)
-        heading_row.addWidget(heading_ornament, 0, Qt.AlignmentFlag.AlignBottom)
+        heading_row.addWidget(heading_ornament)
 
         metric_grid = QGridLayout()
-        metric_grid.setHorizontalSpacing(14)
-        metric_grid.setVerticalSpacing(14)
+        metric_grid.setHorizontalSpacing(10)
+        metric_grid.setVerticalSpacing(10)
         self.metric_median = MetricCard("终值中位数")
         self.metric_range = MetricCard("10/90 分位区间")
         self.metric_principal = MetricCard("总投入")
@@ -392,7 +392,7 @@ class MainWindow(FramelessMainWindow):
     def _build_chart_stack(self) -> QStackedWidget:
         self.chart_stack = QStackedWidget()
         self.chart_stack.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.chart_stack.setMinimumHeight(560)
+        self.chart_stack.setMinimumHeight(470)
 
         self.fan_chart = FanChartCard("路径扇形图", "展示 P10 / P25 / P50 / P75 / P90 的资产区间")
         self.hist_chart = HistogramChartCard("终值直方图", "用终值分布观察结果偏态与上下沿")

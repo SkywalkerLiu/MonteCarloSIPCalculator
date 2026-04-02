@@ -201,17 +201,17 @@ def apply_theme(app: QApplication) -> str:
         }}
         QLabel#MetricTitle {{
             color: {PALETTE["muted"]};
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
         }}
         QLabel#MetricValue {{
             color: {PALETTE["text"]};
-            font-size: 25px;
+            font-size: 23px;
             font-weight: 700;
         }}
         QLabel#MetricCaption {{
             color: {PALETTE["muted"]};
-            font-size: 11px;
+            font-size: 10px;
         }}
         QLabel#DividerCaption {{
             color: {PALETTE["muted"]};
@@ -318,22 +318,19 @@ def apply_theme(app: QApplication) -> str:
             color: rgba(255, 248, 239, 0.88);
         }}
         QPushButton#ChartSwitchButton {{
-            background: rgba(255, 250, 242, 0.84);
+            background: rgba(255, 250, 242, 0.92);
             color: {PALETTE["muted"]};
             border: 1px solid {PALETTE["border_soft"]};
-            border-bottom: 3px solid #d8bb91;
-            border-top-left-radius: 14px;
-            border-top-right-radius: 14px;
-            border-bottom-left-radius: 6px;
-            border-bottom-right-radius: 6px;
+            border-radius: 14px;
             min-width: 112px;
-            padding: 10px 18px 8px 18px;
+            padding: 10px 18px;
             font-size: 12px;
             font-weight: 700;
         }}
         QPushButton#ChartSwitchButton:hover:enabled {{
-            background: rgba(247, 236, 214, 0.98);
+            background: rgba(244, 226, 189, 0.96);
             color: {PALETTE["text"]};
+            border-color: rgba(124, 53, 32, 0.22);
         }}
         QPushButton#ChartSwitchButton:checked {{
             background: qlineargradient(
@@ -344,9 +341,6 @@ def apply_theme(app: QApplication) -> str:
             );
             color: #fff8ef;
             border: 1px solid {PALETTE["accent"]};
-            border-bottom: 4px solid #4e180c;
-            padding-top: 11px;
-            padding-bottom: 9px;
         }}
         QScrollArea {{
             border: none;
